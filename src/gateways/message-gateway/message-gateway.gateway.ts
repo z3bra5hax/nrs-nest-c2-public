@@ -23,7 +23,6 @@ export class MessageGateway {
     if(!shell) return;
     const { socketId } = shell;
     const { command } = requestConfiguration;
-    console.log(`IN: ${command}`)
     this.ioServer.sockets.sockets.get(socketId).emit(MessageTypes.Message, command);
   }
   

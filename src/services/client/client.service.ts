@@ -41,12 +41,10 @@ export class ClientService implements SocketSessionHandler<ClientConfigurationDa
 
     public addShellSubscription(clientId: ClientSocketID, shellSocketId: ShellSocketID): void {
         const clientData: ClientConfigurationData = this.clientSessions.get(clientId);
-        console.log(`updating: ${clientId} with ${shellSocketId}`)
-        console.dir(clientData)
         if(!clientData) return;
         const { shellSubscriptions } = clientData;
         const updatedSubscriptions: ShellSocketID[] = UniqueArray<ShellSocketID>([...shellSubscriptions, shellSocketId]);
-        console.dir(updatedSubscriptions)
+
         this.clientSessions.set(clientId, {...clientData, shellSubscriptions: updatedSubscriptions});
     }
 
