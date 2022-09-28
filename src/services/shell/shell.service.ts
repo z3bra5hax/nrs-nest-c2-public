@@ -12,9 +12,7 @@ export class ShellService implements SocketSessionHandler<SocketShellData> {
     private nameIndex: Map<ShellName, ShellSocketID> = new Map();
 
     public registerSession(shellClient: Socket, reverseShellConnection: ReverseShellConnection): SocketShellData {
-        console.log(`registering: ${JSON.stringify(reverseShellConnection, null, 2)}`);
         if(!reverseShellConnection?.sessionId) {
-            console.error(`Field "sessionId" is required for reverse shell registration. Not found in: ${JSON.stringify(reverseShellConnection, null, 2)}`);
             shellClient.disconnect(true);
             return null;
         }
@@ -24,7 +22,6 @@ export class ShellService implements SocketSessionHandler<SocketShellData> {
     }
 
     public addSession(socketId: string, shellData: SocketShellData): void {
-        console.log(`Adding ${socketId}`)
         shellData.subscribedClients = shellData.subscribedClients ?? [];
         this.shellSessions.set(socketId, shellData);
         if(shellData.name) {
@@ -43,7 +40,6 @@ export class ShellService implements SocketSessionHandler<SocketShellData> {
     }
 
     public endSession(socketId: string): void {
-        console.log('ending session')
         const shellData: SocketShellData = this.shellSessions.get(socketId);
         if(!shellData) return;
         const { name } = shellData;
@@ -52,13 +48,10 @@ export class ShellService implements SocketSessionHandler<SocketShellData> {
     }
 
     public getShellBySocketId(socketId): SocketShellData {
-        console.log(`looking for ${socketId}`)
-        console.log(Array.from(this.shellSessions.keys()))
         return this.shellSessions.get(socketId) ?? null;
     }
 
     public getShellByShellId(shellId: ShellID): SocketShellData {
-        console.log(Array.from(this.shellSessions))
         const shellData: SocketShellData = Array.from(this.shellSessions.values()).find( (shell: SocketShellData) => shell.shellId === shellId );
         if(!shellData) return null;
         return shellData;
@@ -79,7 +72,6 @@ export class ShellService implements SocketSessionHandler<SocketShellData> {
     }
 
     public getShellSocketByName(name: string): string {
-        console.log(Array.from(this.nameIndex.entries()))
         const socketId = this.nameIndex.get(name);
         return socketId ?? null;
     }
@@ -104,19 +96,15 @@ export class ShellService implements SocketSessionHandler<SocketShellData> {
         const updatedClients: SubscriptionSocketData[] = [...subscribedClients];
         const entryIndex = updatedClients.findIndex( ({socket}) => socket.id === clientSocket.id);
         if( entryIndex >= 0 ) {
-            console.log(`It was already here`)
-            console.dir(updatedClients[entryIndex]);
             updatedClients[entryIndex].terminals = UniqueArray<string>([...updatedClients[entryIndex].terminals, requestingTerminal.id]);
         } else {
             const newSubscription = {
                 socket: clientSocket,
                 terminals: [requestingTerminal.id]
             };
-            console.dir(newSubscription)
             updatedClients.push(newSubscription);
         }
         const updateData: SocketShellData = {...socketShellData, subscribedClients: UniqueArray<SubscriptionSocketData>(updatedClients)};
-        console.log(`Subscribed Clients: ${subscribedClients.map( ({socket}: SubscriptionSocketData) => socket.id )}`)
         this.shellSessions.set(shellSocketId, updateData);
     }
 
@@ -146,14 +134,11 @@ export class ShellService implements SocketSessionHandler<SocketShellData> {
         const {socketId, shellId, name} = ShellQueryFields;
         const shellQueryKeys: ShellQueryFields[] = [socketId, shellId, name];
         const shellGetterKey = shellQueryKeys.find( (field: ShellQueryFields) => !!request[field]);
-        console.log(shellGetterKey)
         if(!shellGetterKey) {
             console.error(`No valid value found in shell request configuration: One of the following must have a valid value: ${Object.keys(shellQueryKeys)} \nRecieved: ${JSON.stringify(request, null, 2)}`);
             return;
         }
         const shellGetterMethod: ShellGetters = ShellGetters[shellGetterKey];
-        console.log(shellGetterMethod)
-        console.log(request[shellGetterKey])
         const result = this[shellGetterMethod](request[shellGetterKey].trim());
         return result;
     }

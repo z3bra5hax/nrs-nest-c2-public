@@ -16,27 +16,20 @@ export class ClientShellSubscriptionService {
     ){}
 
     private isShellSocket(socketId: SocketID): boolean {
-      console.dir(this.shellService.getShellBySocketId(socketId))
       return this.shellService.getShellBySocketId(socketId) ? true : false;
     }
 
     public registerNameSubscription(name: ShellName, socketId: ClientSocketID): void {
-      console.log('registering name subscription')
       const currentSubscriptions: ClientSocketID[] = this.shellNameSubscriptions.get(name);
       const registeredSockets: ClientSocketID[] = currentSubscriptions?.length ? [...currentSubscriptions] : [];
       registeredSockets.push(socketId);
-      console.log(`Setting ${name} to `)
-      console.dir(registeredSockets);
       this.shellNameSubscriptions.set(name, registeredSockets);
   }
 
     public notifyNameSubscribers(socketShellData: SocketShellData, ioServer: Server) {
       const { name, socketId, subscribedClients } = socketShellData;
-      console.log('notifying');
       const nameQueries: ClientSocketID[] = this.shellNameSubscriptions.get(name) ?? [];
       const nameListeners: Set<ClientSocketID> = new Set([...nameQueries, ...subscribedClients.map( ({socket}) => socket.id )]);
-      console.dir(nameListeners)
-      console.log('=====================')
       nameListeners.forEach( (clientSocketId: string) => {
         try {
           ioServer.sockets.sockets.get(clientSocketId)?.emit(SubscriptionMessageTypes.ShellDataFound, {name, socketId});
@@ -93,11 +86,10 @@ export class ClientShellSubscriptionService {
     }
 
     public handleDisconnect(socketId: SocketID): void {
+      // Don't do this in production code, just to show daughter that booleans can be coerced to numbers
       const isShell: 0|1 = Number(this.isShellSocket(socketId)) as 0|1;
-      console.log(`isShell: ${isShell}`)
       const socketService: ClientService|ShellService = [this.clientService, this.shellService][isShell];
       if(isShell) {
-        console.log('it\'s a shell disconnecting')
         this.shellService.broadcastMessageToSubscribers(socketId, null, SubscriptionMessageTypes.ShellDisconnect);
       } else {
         this.unsubscribeClient(socketId);
@@ -109,7 +101,6 @@ export class ClientShellSubscriptionService {
       const clientSocketId: ClientSocketID = client.id;
       const { requestingTerminal } = shellSubscriptionRequest;
       const shell: SocketShellData = this.shellService.getShellFromRequestConfig(shellSubscriptionRequest);
-      console.log(`Found: ${shell}`)
       if(!shell) return;
       const { name, additionalData, socketId, shellId } = shell;
       if(name) {
